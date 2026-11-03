@@ -6,7 +6,7 @@ Amounts are stored in integer pence. Monthly and annual totals come from saved r
 
 Data uses the existing `bills-encrypted-v2` localStorage key and v2 AES-GCM/PBKDF2 format. Legacy `private-subscriptions-v1` records migrate on PIN setup. Export backup produces encrypted JSON; restore requires the same PIN and confirmation before replacing this phone's records. Keep backups and your PIN safe. Clearing website data loses the local vault; updating the PWA does not require clearing data or resetting the PIN.
 
-Payment completion can be automatic after the scheduled date or manually overridden. The calendar and history reflect these schedules, not verified bank transactions.
+Payments this month shows each scheduled occurrence, including automatically ticked past payments. Upcoming payments shows the next scheduled occurrence, which stays unticked until paid. Automatic completion happens after the scheduled date; today and future dates remain due. Manual mode and explicit paid/unpaid overrides take priority. The calendar and history reflect these schedules, not verified bank transactions.
 
 ## Development and validation
 
@@ -26,6 +26,6 @@ Host `index.html`, `app.js`, `updates.js`, `sw.js`, `manifest.webmanifest` and `
 
 After changing any shell asset or worker logic, run `npm run prepare:update` and commit the generated `sw.js` revision. `npm run check` fails if the revision is stale. The worker precaches a complete release and keeps it available offline, bypassing HTTP caches during installation. Registration uses `updateViaCache: 'none'` and checks on launch, focus, returning to the foreground, and hourly while visible.
 
-A replacement waits and displays **An app update is available** with **Update now**. Save or cancel any open edit first. Updating activates the waiting worker and reloads this window; it does not alter localStorage, your PIN or encrypted backups. Only this app's old shell caches are removed. On the first upgrade from an older installation, open the PWA online so it can receive the new update code. Do not clear Safari website data to update.
+A replacement waits and displays **An app update is available** with **Update now**. Save or cancel any open edit first. The button also supports older cached app code, observes worker activation directly if controllerchange is missed, and offers Retry update after a failed or stalled attempt. Updating activates the waiting worker and reloads this window; it does not alter localStorage, your PIN or encrypted backups. Only this app's old shell caches are removed. On the first upgrade from an older installation, open the PWA online so it can receive the new update code. Do not clear Safari website data to update.
 
 Merge and deployment are separate from validation. Review the pull request before merging; merging to the GitHub Pages source branch may publish the site.

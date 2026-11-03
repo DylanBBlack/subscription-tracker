@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
 
-export async function browser({url:initialUrl}={}){
+export async function browser({url:initialUrl,legacyApp=false,initScript}={}){
   const root=new URL('../',import.meta.url);
   let offline=false,release='';
   const server=createServer(async(req,res)=>{
@@ -14,6 +14,7 @@ export async function browser({url:initialUrl}={}){
     if(path.includes('..')){res.writeHead(404).end();return}
     try{
       let body=await readFile(new URL(path||'index.html',root));
+      if(path==='app.js'&&legacyApp)body=body.toString().replace('let pendingWrites=0;\n','').replace('pendingWrites++;try{','').replace('}finally{pendingWrites--}}','}');
       if(path==='sw.js'&&release)body=body.toString().replace(/subscription-tracker-[a-f0-9]+/,`subscription-tracker-${release}`);
       const type=path.endsWith('.js')?'text/javascript':path.endsWith('.svg')?'image/svg+xml':path.endsWith('.webmanifest')?'application/manifest+json':'text/html';
       res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-cache'}).end(body);
@@ -40,6 +41,7 @@ export async function browser({url:initialUrl}={}){
   const {targetId}=await send('Target.createTarget',{url:'about:blank'});
   session=(await send('Target.attachToTarget',{targetId,flatten:true},false)).sessionId;
   await send('Runtime.enable');await send('Page.enable');
+  if(initScript)await send('Page.addScriptToEvaluateOnNewDocument',{source:initScript});
   async function evaluate(expression){const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value}
   async function wait(expression){const end=Date.now()+15000;while(Date.now()<end){try{if(await evaluate(expression))return}catch{}await new Promise(resolve=>setTimeout(resolve,50))}throw Error('Timed out: '+expression)}
   await send('Page.navigate',{url:initialUrl||origin+'/tracker/'});await wait("typeof render==='function'");

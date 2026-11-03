@@ -23,8 +23,33 @@ function paid(r,d){return r.overrides?.[d]??(r.mode==='auto'&&d<today())}
 function annualPence(r){return r.amountPence*({monthly:12,weekly:52,quarterly:4,yearly:1}[r.frequency]||12)}
 function totals(bills){let annual=bills.reduce((sum,r)=>sum+annualPence(r),0);return {monthly:Math.round(annual/12),annual}}
 function show(msg){$('message').hidden=false;$('message').textContent=msg}
-function row(r,d){let el=document.createElement('div');el.className='item';if(d){let cb=document.createElement('input');cb.type='checkbox';cb.checked=paid(r,d);cb.setAttribute('aria-label','Mark '+r.name+' paid');cb.onchange=async()=>{r.overrides??={};r.overrides[d]=cb.checked;await save();render()};el.append(cb)}let detail=document.createElement('div');detail.className='detail';let name=document.createElement('strong'),sub=document.createElement('small'),actions=document.createElement('div');name.textContent=r.name;sub.textContent=d?parse(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · '+r.frequency+' · '+(paid(r,d)?'Paid':'Due'):'Date not set · '+r.frequency;actions.className='actions';let edit=document.createElement('button');edit.textContent=d?'Edit':'Set date';edit.className='alt';edit.onclick=()=>openEditor(r.id);let del=document.createElement('button');del.textContent='Delete';del.className='danger';del.onclick=async()=>{if(confirm('Delete '+r.name+'?')){records=records.filter(x=>x.id!==r.id);await save();render()}};actions.append(edit,del);detail.append(name,sub,actions);let amt=document.createElement('div');amt.className='amount';amt.textContent=fmt(r.amountPence);el.append(detail,amt);return el}
-function render(){let now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1,12),last=new Date(now.getFullYear(),now.getMonth()+1,0,12);$('month').textContent=now.toLocaleDateString('en-GB',{month:'long',year:'numeric'});let sum=totals(records);$('total').textContent=fmt(sum.monthly);$('annual').textContent=fmt(sum.annual)+' annually';let unpaid=0;for(let r of records)for(let d of occurrences(r,first,last))if(!paid(r,d))unpaid+=r.amountPence;$('unpaid').textContent=fmt(unpaid);let needs=records.filter(r=>!r.start);$('needCount').textContent='('+needs.length+')';$('needs').replaceChildren();for(let r of needs)$('needs').append(row(r,null));if(!needs.length)$('needs').textContent='All bills have payment dates.';$('items').replaceChildren();let scheduled=records.filter(r=>r.start).map(r=>({r,d:next(r)})).sort((a,b)=>a.d.localeCompare(b.d));for(let {r,d} of scheduled)$('items').append(row(r,d));if(!scheduled.length)$('items').textContent='No scheduled bills yet.';calendarRender();historyRender()}
+function row(r,d){let el=document.createElement('div');el.className='item';if(d){let cb=document.createElement('input');cb.type='checkbox';cb.checked=paid(r,d);cb.setAttribute('aria-label','Mark '+r.name+' paid for '+d);cb.onchange=async()=>{r.overrides??={};r.overrides[d]=cb.checked;await save();render()};el.append(cb)}let detail=document.createElement('div');detail.className='detail';let name=document.createElement('strong'),sub=document.createElement('small'),actions=document.createElement('div');name.textContent=r.name;sub.textContent=d?parse(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · '+r.frequency+' · '+(paid(r,d)?(r.mode==='auto'&&d<today()&&r.overrides?.[d]==null?'Paid automatically':'Paid'):(d<today()?'Unpaid':'Due')):'Date not set · '+r.frequency;actions.className='actions';let edit=document.createElement('button');edit.textContent=d?'Edit':'Set date';edit.className='alt';edit.onclick=()=>openEditor(r.id);let del=document.createElement('button');del.textContent='Delete';del.className='danger';del.onclick=async()=>{if(confirm('Delete '+r.name+'?')){records=records.filter(x=>x.id!==r.id);await save();render()}};actions.append(edit,del);detail.append(name,sub,actions);let amt=document.createElement('div');amt.className='amount';amt.textContent=fmt(r.amountPence);el.append(detail,amt);return el}
+function render(){
+  const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1,12),last=new Date(now.getFullYear(),now.getMonth()+1,0,12);
+  $('month').textContent=now.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const sum=totals(records);
+  $('total').textContent=fmt(sum.monthly);
+  $('annual').textContent=fmt(sum.annual)+' annually';
+  const payments=records.flatMap(r=>occurrences(r,first,last).map(d=>({r,d}))).sort((a,b)=>a.d.localeCompare(b.d));
+  $('unpaid').textContent=fmt(payments.reduce((sum,{r,d})=>sum+(paid(r,d)?0:r.amountPence),0));
+  const needs=records.filter(r=>!r.start);
+  $('needCount').textContent='('+needs.length+')';
+  $('needs').replaceChildren();
+  for(const r of needs)$('needs').append(row(r,null));
+  if(!needs.length)$('needs').textContent='All bills have payment dates.';
+  // An older HTML shell may briefly be served during the first PWA upgrade.
+  const monthItems=$('monthItems');
+  if(monthItems){
+    monthItems.replaceChildren();
+    for(const {r,d} of payments)monthItems.append(row(r,d));
+    if(!payments.length)monthItems.textContent='No payment dates scheduled this month.';
+  }
+  $('items').replaceChildren();
+  const scheduled=records.filter(r=>r.start).map(r=>({r,d:next(r)})).sort((a,b)=>a.d.localeCompare(b.d));
+  for(const {r,d} of scheduled)$('items').append(row(r,d));
+  if(!scheduled.length)$('items').textContent='No scheduled bills yet.';
+  calendarRender();historyRender();
+}
 function calendarRender(){let y=cal.getFullYear(),m=cal.getMonth(),first=new Date(y,m,1,12),last=new Date(y,m+1,0,12),counts={};$('calendarTitle').textContent='Payment calendar · '+first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});for(let r of records)for(let d of occurrences(r,first,last))counts[d]=(counts[d]||0)+1;let root=$('calendar');root.replaceChildren();for(let s of ['M','T','W','T','F','S','S']){let e=document.createElement('div');e.textContent=s;root.append(e)}for(let i=0;i<(first.getDay()+6)%7;i++)root.append(document.createElement('div'));for(let i=1;i<=last.getDate();i++){let e=document.createElement('div'),d=iso(new Date(y,m,i,12));e.textContent=i+(counts[d]?' •':'');if(counts[d])e.className='hit';root.append(e)}}
 function historyRender(){let end=new Date(),start=new Date(end.getFullYear()-1,end.getMonth(),end.getDate(),12),arr=[];for(let r of records)for(let d of occurrences(r,start,end))arr.push({r,d});arr.sort((a,b)=>b.d.localeCompare(a.d));$('history').replaceChildren();for(let {r,d} of arr.slice(0,150)){let p=document.createElement('p');p.className='muted';p.textContent=`${d} · ${r.name} · ${fmt(r.amountPence)} · ${paid(r,d)?'Paid':'Unpaid'}`;$('history').append(p)}}
 function openEditor(id=null){editing=id;let r=records.find(x=>x.id===id),f=$('form').elements;$('form').reset();$('formTitle').textContent=r?'Edit bill':'Add bill';f.name.value=r?.name||'';f.amount.value=r?(r.amountPence/100).toFixed(2):'';f.frequency.value=r?.frequency||'monthly';f.start.value=r?.start||'';f.mode.value=r?.mode||'auto';$('editor').showModal()}
