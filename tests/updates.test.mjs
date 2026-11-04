@@ -41,9 +41,70 @@ test('PWA offers a waiting update, protects edits, retains the encrypted vault a
     assert.equal(await page.evaluate("document.querySelector('#needs strong').textContent"),'Synthetic update record');
     assert.equal(await page.evaluate("document.getElementById('total').textContent"),'£4.56');
     assert.equal(await page.evaluate("localStorage.getItem('bills-encrypted-v2')"),vault);
+    assert.equal(await page.evaluate('document.documentElement.dataset.theme'),'forest');
+    assert.equal(await page.evaluate('getComputedStyle(document.documentElement).backgroundColor'),'rgb(23, 33, 29)');
     // iPhone-sized viewport: rows and actions stay within the document width.
     await page.send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true});
     assert.equal(await page.evaluate('document.documentElement.scrollWidth<=window.innerWidth'),true);
+    assert.deepEqual(page.errors,[]);
+  }finally{await page.close()}
+});
+
+
+test('update button works alongside a cached app predating the pending-write tracker',async()=>{
+  const page=await browser({legacyApp:true});
+  try{
+    await page.wait('!!navigator.serviceWorker.controller');
+    assert.equal(await page.evaluate('typeof pendingWrites'),'undefined');
+    page.setRelease('legacy-upgrade');
+    await page.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())');
+    await page.wait("navigator.serviceWorker.getRegistration().then(r=>r.waiting?.state==='installed') && !document.getElementById('updateNotice').hidden");
+    await page.evaluate("window.__oldApp=true;document.getElementById('applyUpdate').click()");
+    await page.wait("typeof window.__oldApp==='undefined' && typeof render==='function'");
+    assert.deepEqual(page.errors,[]);
+  }finally{await page.close()}
+});
+
+test('update reloads even when the controllerchange event is not delivered',async()=>{
+  const page=await browser({initScript:`
+    const original=navigator.serviceWorker.addEventListener.bind(navigator.serviceWorker);
+    navigator.serviceWorker.addEventListener=(type,...args)=>{
+      if(type!=='controllerchange')original(type,...args);
+    };
+  `});
+  try{
+    await page.wait('!!navigator.serviceWorker.controller');
+    page.setRelease('missing-controller-event');
+    await page.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())');
+    await page.wait("navigator.serviceWorker.getRegistration().then(r=>r.waiting?.state==='installed') && !document.getElementById('updateNotice').hidden");
+    await page.evaluate("window.__beforeUpdate=true;document.getElementById('applyUpdate').click()");
+    await page.wait("typeof window.__beforeUpdate==='undefined' && typeof render==='function'");
+    assert.deepEqual(page.errors,[]);
+  }finally{await page.close()}
+});
+
+test('an unresponsive worker offers a working retry instead of a permanently disabled button',async()=>{
+  const page=await browser();
+  try{
+    await page.wait('!!navigator.serviceWorker.controller');
+    page.setRelease('stalled-update');
+    await page.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())');
+    await page.wait("navigator.serviceWorker.getRegistration().then(r=>r.waiting?.state==='installed') && !document.getElementById('updateNotice').hidden");
+    await page.evaluate(`(async()=>{
+      const worker=(await navigator.serviceWorker.getRegistration()).waiting;
+      const post=worker.postMessage.bind(worker);
+      window.__restorePost=()=>worker.postMessage=post;
+      worker.postMessage=()=>{};
+      window.__beforeUpdate=true;
+      document.getElementById('applyUpdate').click();
+    })()`);
+    assert.equal(await page.evaluate("document.getElementById('applyUpdate').disabled"),true);
+    await page.wait("!document.getElementById('applyUpdate').disabled");
+    assert.equal(await page.evaluate('window.__beforeUpdate'),true);
+    assert.equal(await page.evaluate("document.getElementById('applyUpdate').textContent"),'Retry update');
+    assert.match(await page.evaluate("document.querySelector('#updateNotice span').textContent"),/has not finished/);
+    await page.evaluate("window.__restorePost();document.getElementById('applyUpdate').click()");
+    await page.wait("typeof window.__beforeUpdate==='undefined' && typeof render==='function'");
     assert.deepEqual(page.errors,[]);
   }finally{await page.close()}
 });

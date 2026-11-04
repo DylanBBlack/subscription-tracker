@@ -1,1 +1,189 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>My Bills</title><link rel="manifest" href="manifest.webmanifest"><style>:root{font-family:system-ui,-apple-system,sans-serif;color:#f4f7fb;background:#101827}*{box-sizing:border-box}body{margin:0}main{max-width:650px;margin:auto;padding:25px 16px 90px}.muted,small{color:#a6b5c9}h1{font-size:29px;margin:5px 0}h2{font-size:19px;margin:28px 0 12px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}.panel,.item{background:#1b293d;border:1px solid #34455d;border-radius:16px;padding:15px}.big{font-size:25px;font-weight:750;margin-top:8px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}button{border:0;border-radius:10px;background:#4f89ff;color:white;padding:11px 13px;font:600 14px system-ui;cursor:pointer}button.alt{background:#34445b}button.danger{background:#743d4b}.item{display:flex;gap:10px;align-items:center;margin:9px 0}.item .detail{flex:1;min-width:0}.item strong,.item small{display:block;overflow-wrap:anywhere}.item small{font-size:12px;margin-top:5px}.amount{font-weight:700;white-space:nowrap}.actions{display:flex;gap:7px;margin-top:8px}.actions button{padding:6px 9px;font-size:12px}.item input[type=checkbox]{width:20px;height:20px;accent-color:#4f89ff}input,select{font:inherit}label{display:block;font-size:14px;margin:12px 0;color:#cad7e6}label input,label select{display:block;width:100%;margin-top:6px;padding:11px;background:#101827;color:#fff;border:1px solid #61708a;border-radius:10px}dialog{width:min(94vw,460px);border:1px solid #55647b;border-radius:17px;background:#1b293d;color:white;padding:22px}dialog::backdrop{background:#000b}#gate{position:fixed;inset:0;background:#101827;z-index:10;display:grid;place-items:center;padding:20px}#gate[hidden],#app[hidden]{display:none}#gate .panel{width:min(100%,390px)}#gate input{width:100%;font:inherit;letter-spacing:6px;text-align:center;background:#101827;color:white;padding:12px;border:1px solid #60718a;border-radius:10px}#gate button{width:100%;margin-top:12px}#gate p{font-size:13px;line-height:1.5}.notice{padding:12px;background:#29384e;border-radius:12px;font-size:13px;line-height:1.5}#calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}#calendar div{text-align:center;padding:9px 0;border-radius:8px;font-size:12px}.hit{background:#35537d}.foot{font-size:12px;color:#9caec4;line-height:1.5;margin-top:24px}details{margin-top:24px}summary{cursor:pointer}#updateNotice{position:fixed;top:env(safe-area-inset-top,0);left:12px;right:12px;z-index:20;max-width:626px;margin:8px auto;box-shadow:0 4px 20px #0008}#updateNotice[hidden]{display:none}</style></head><body><div id="updateNotice" class="notice" role="status" hidden><span>An app update is available.</span> <button id="applyUpdate" type="button">Update now</button></div><div id="gate"><div class="panel"><h1 id="gateTitle">Secure your bills</h1><p id="gateInfo" class="muted">Set a 6-digit PIN. Your data will be encrypted on this device. If you forget the PIN, your data cannot be recovered without a backup.</p><form id="gateForm"><input id="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" minlength="6" autocomplete="off" required placeholder="••••••" aria-label="Six digit PIN"><button id="gateButton">Set PIN</button></form><p id="gateError" role="alert"></p><button id="reset" class="alt" hidden>Erase local vault and reset</button></div></div><main id="app" hidden><div class="muted">PERSONAL FINANCE</div><h1>My bills</h1><div class="muted" id="month"></div><div class="stats"><div class="panel"><small>Monthly total</small><div class="big" id="total">£0.00</div><small id="annual"></small></div><div class="panel"><small>Unpaid this month</small><div class="big" id="unpaid">£0.00</div></div></div><div class="toolbar"><button id="add">+ Add bill</button><button class="alt" id="import">Import CSV</button><button class="alt" id="export">Export backup</button><button class="alt" id="restore">Restore backup</button><input type="file" id="restoreFile" accept=".json,application/json" hidden><button class="alt" id="lock">Lock</button><input type="file" id="importFile" accept=".csv,text/csv" hidden></div><div id="message" class="notice" hidden></div><h2>Needs payment date <span id="needCount"></span></h2><div id="needs"></div><h2>Upcoming payments</h2><div id="items"></div><h2 id="calendarTitle">Payment calendar</h2><div class="toolbar"><button class="alt" id="prev">←</button><button class="alt" id="next">→</button></div><div id="calendar"></div><details><summary>Payment history</summary><div id="history"></div></details><p class="foot">Your bills are encrypted locally with your PIN. Automatic check-offs are schedule-based, not verified bank transactions. Backups are encrypted; save your PIN safely. If website data is cleared, restore from backup.</p></main><dialog id="editor"><form id="form"><h2 id="formTitle">Add bill</h2><label>Name<input name="name" maxlength="80" required></label><label>Amount (£)<input name="amount" type="number" min="0" max="100000" step="0.01" required></label><label>Frequency<select name="frequency"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="quarterly">Quarterly</option><option value="yearly">Yearly</option></select></label><label>Next / first due date (optional)<input name="start" type="date"></label><label>Completion<select name="mode"><option value="auto">Automatic after scheduled date</option><option value="manual">Manual only</option></select></label><div class="toolbar"><button type="submit">Save</button><button type="button" class="alt" id="cancel">Cancel</button></div></form></dialog><script src="app.js"></script><script src="updates.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17211d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>My Bills</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<script src="themes.js">
+</script>
+</head>
+<body>
+<div id="updateNotice" class="notice" role="status" hidden>
+<span>An app update is available.</span> <button id="applyUpdate" type="button">Update now</button>
+</div>
+<div id="gate">
+<div class="panel">
+<h1 id="gateTitle">Secure your bills</h1>
+<p id="gateInfo" class="muted">Set a 6-digit PIN. Your data will be encrypted on this device. If you forget the PIN, your data cannot be recovered without a backup.</p>
+<form id="gateForm">
+<input id="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" minlength="6" autocomplete="off" required placeholder="••••••" aria-label="Six digit PIN">
+<button id="gateButton">Set PIN</button>
+</form>
+<p id="gateError" role="alert">
+</p>
+<button id="reset" class="alt" hidden>Erase local vault and reset</button>
+</div>
+</div>
+<main id="app" hidden>
+<header class="header">
+<div>
+<div class="muted eyebrow">PERSONAL FINANCE</div>
+<h1>My bills</h1>
+<div class="muted" id="month">
+</div>
+</div>
+<button id="openSettings" class="alt" type="button" aria-haspopup="dialog">Settings</button>
+</header>
+<div class="stats">
+<div class="panel">
+<small>Monthly total</small>
+<div class="big" id="total">£0.00</div>
+<small id="annual">
+</small>
+</div>
+<div class="panel">
+<small>Unpaid this month</small>
+<div class="big" id="unpaid">£0.00</div>
+</div>
+</div>
+<div class="toolbar">
+<button class="alt" id="lock">Lock</button>
+</div>
+<div id="message" class="notice" hidden>
+</div>
+<h2>Needs payment date <span id="needCount">
+</span>
+</h2>
+<div id="needs">
+</div>
+<h2>Payments this month</h2>
+<p class="muted">Past automatic payments are ticked here. Upcoming payments below show the next scheduled date.</p>
+<div id="monthItems">
+</div>
+<h2>Upcoming payments</h2>
+<div id="items">
+</div>
+<h2 id="calendarTitle">Payment calendar</h2>
+<div class="toolbar">
+<button class="alt" id="prev">←</button>
+<button class="alt" id="next">→</button>
+</div>
+<div id="calendar">
+</div>
+<details>
+<summary>Payment history</summary>
+<div id="history">
+</div>
+</details>
+<p class="foot">Your bills are encrypted locally with your PIN. Automatic check-offs are schedule-based, not verified bank transactions. Backups are encrypted; save your PIN safely. If website data is cleared, restore from backup.</p>
+</main>
+<dialog id="settings" aria-labelledby="settingsTitle">
+  <div class="dialog-heading">
+<h2 id="settingsTitle">Settings</h2>
+<button class="alt" id="closeSettings" type="button">Done</button>
+</div>
+  <fieldset>
+<legend>Theme</legend>
+<p class="muted">Choose a look for this phone.</p>
+<div class="theme-grid">
+<label class="theme-choice">
+<input type="radio" name="theme" value="forest" checked>
+<span>Forest & slate</span>
+<span class="swatches" aria-hidden="true">
+<i style="--swatch:#17211d">
+</i>
+<i style="--swatch:#27352e">
+</i>
+<i style="--swatch:#5ca878">
+</i>
+</span>
+</label>
+<label class="theme-choice">
+<input type="radio" name="theme" value="sage">
+<span>Sage & graphite</span>
+<span class="swatches" aria-hidden="true">
+<i style="--swatch:#202423">
+</i>
+<i style="--swatch:#303735">
+</i>
+<i style="--swatch:#9dbba3">
+</i>
+</span>
+</label>
+<label class="theme-choice">
+<input type="radio" name="theme" value="emerald">
+<span>Emerald & charcoal</span>
+<span class="swatches" aria-hidden="true">
+<i style="--swatch:#171c1a">
+</i>
+<i style="--swatch:#29322e">
+</i>
+<i style="--swatch:#30b878">
+</i>
+</span>
+</label>
+<label class="theme-choice">
+<input type="radio" name="theme" value="olive">
+<span>Olive & stone</span>
+<span class="swatches" aria-hidden="true">
+<i style="--swatch:#23251f">
+</i>
+<i style="--swatch:#35382e">
+</i>
+<i style="--swatch:#a5b36b">
+</i>
+</span>
+</label>
+</div>
+<p id="themeStatus" class="muted" role="status">
+</p>
+</fieldset>
+  <h2>Bills & backups</h2>
+<div class="settings-actions">
+    <button id="add" type="button">+ Add bill</button>
+    <button class="alt" id="import" type="button">Import CSV</button>
+    <button class="alt" id="export" type="button">Export encrypted backup</button>
+    <button class="alt" id="restore" type="button">Restore encrypted backup</button>
+  </div>
+  <input type="file" id="importFile" accept=".csv,text/csv" hidden>
+  <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+  <p class="foot">Your bills stay on this phone. Keep an encrypted backup and your PIN safe.</p>
+</dialog>
+<dialog id="editor" aria-labelledby="formTitle">
+<form id="form">
+<h2 id="formTitle">Add bill</h2>
+<label>Name<input name="name" maxlength="80" required>
+</label>
+<label>Amount (£)<input name="amount" type="number" min="0" max="100000" step="0.01" required>
+</label>
+<label>Frequency<select name="frequency">
+<option value="monthly">Monthly</option>
+<option value="weekly">Weekly</option>
+<option value="quarterly">Quarterly</option>
+<option value="yearly">Yearly</option>
+</select>
+</label>
+<label>Next / first due date (optional)<input name="start" type="date">
+</label>
+<label>Completion<select name="mode">
+<option value="auto">Automatic after scheduled date</option>
+<option value="manual">Manual only</option>
+</select>
+</label>
+<div class="toolbar">
+<button type="submit">Save</button>
+<button type="button" class="alt" id="cancel">Cancel</button>
+</div>
+</form>
+</dialog>
+<script src="app.js">
+</script>
+<script src="updates.js">
+</script>
+</body>
+</html>
