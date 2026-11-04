@@ -1,7 +1,7 @@
 'use strict';
-const CACHE='subscription-tracker-a17afa7cb0715a2e';
+const CACHE='subscription-tracker-6bd16db259e9df10';
 const PREFIX='subscription-tracker-';
-const ASSETS=['./','./index.html','./app.js','./updates.js','./manifest.webmanifest','./icon.svg'];
+const ASSETS=['./','./index.html','./app.js','./updates.js','./styles.css','./themes.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(
     ASSETS.map(url=>new Request(url,{cache:'reload'}))

@@ -41,6 +41,8 @@ test('PWA offers a waiting update, protects edits, retains the encrypted vault a
     assert.equal(await page.evaluate("document.querySelector('#needs strong').textContent"),'Synthetic update record');
     assert.equal(await page.evaluate("document.getElementById('total').textContent"),'£4.56');
     assert.equal(await page.evaluate("localStorage.getItem('bills-encrypted-v2')"),vault);
+    assert.equal(await page.evaluate('document.documentElement.dataset.theme'),'forest');
+    assert.equal(await page.evaluate('getComputedStyle(document.documentElement).backgroundColor'),'rgb(23, 33, 29)');
     // iPhone-sized viewport: rows and actions stay within the document width.
     await page.send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true});
     assert.equal(await page.evaluate('document.documentElement.scrollWidth<=window.innerWidth'),true);
