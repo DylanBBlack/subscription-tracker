@@ -1,5 +1,5 @@
 'use strict';
-const CACHE='subscription-tracker-6bd16db259e9df10';
+const CACHE='subscription-tracker-3896506354a51b76';
 const PREFIX='subscription-tracker-';
 const ASSETS=['./','./index.html','./app.js','./updates.js','./styles.css','./themes.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{
