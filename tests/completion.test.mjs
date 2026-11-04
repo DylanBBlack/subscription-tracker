@@ -43,6 +43,30 @@ test('past automatic payments visibly tick, while manual, today and future payme
     await page.wait("!document.getElementById('app').hidden");
     assert.equal(await page.evaluate("document.querySelector('#monthItems input').checked"),false);
     assert.equal(await page.evaluate("records[0].overrides['2026-11-02']"),false);
+    // Native disclosure bars start closed and retain their state during payment edits.
+    assert.equal(await page.evaluate("document.getElementById('monthPayments').open"),false);
+    assert.equal(await page.evaluate("document.getElementById('upcomingPayments').open"),false);
+    assert.equal(await page.evaluate("document.querySelector('#monthItems input').checkVisibility()"),false);
+    await page.evaluate("document.querySelector('#monthPayments summary').focus()");
+    assert.equal(await page.evaluate('document.activeElement.tagName'),'SUMMARY');
+    await page.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
+    await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+    assert.equal(await page.evaluate("document.getElementById('monthPayments').open"),true);
+    assert.ok(await page.evaluate("document.querySelector('#monthItems input').checkVisibility()"));
+    await page.evaluate("document.querySelector('#upcomingPayments summary').click();render()");
+    assert.equal(await page.evaluate("document.getElementById('upcomingPayments').open"),true);
+    assert.equal(await page.evaluate("document.getElementById('monthPayments').open"),true);
+    assert.equal(await page.evaluate("document.getElementById('needsSection').hidden"),false);
+    // Setting the final missing date hides the whole section, clearing it brings it back.
+    await page.evaluate("document.querySelector('#needs button.alt').click();document.getElementById('form').elements.start.value='2026-11-10';document.getElementById('form').requestSubmit()");
+    await page.wait("!document.getElementById('editor').open && pendingWrites===0");
+    assert.equal(await page.evaluate("document.getElementById('needsSection').hidden"),true);
+    assert.equal(await page.evaluate("document.querySelectorAll('#needs .item').length"),0);
+    assert.equal(await page.evaluate("document.getElementById('total').textContent"),'£7.00');
+    await page.evaluate("openEditor('6');document.getElementById('form').elements.start.value='';document.getElementById('form').requestSubmit()");
+    await page.wait("!document.getElementById('editor').open && pendingWrites===0");
+    assert.equal(await page.evaluate("document.getElementById('needsSection').hidden"),false);
+    assert.equal(await page.evaluate("document.querySelectorAll('#needs .item').length"),1);
     // A cached HTML shell without the new section still renders its existing lists.
     await page.evaluate("document.getElementById('monthItems').remove();render()");
     assert.equal(await page.evaluate("document.querySelectorAll('#items .item').length"),6);

@@ -56,18 +56,28 @@
 </div>
 <div id="message" class="notice" hidden>
 </div>
-<h2>Needs payment date <span id="needCount">
+<section id="needsSection" aria-labelledby="needsTitle" hidden>
+<h2 id="needsTitle">Needs payment date <span id="needCount">
 </span>
 </h2>
 <div id="needs">
 </div>
-<h2>Payments this month</h2>
+</section>
+<details id="monthPayments" class="payment-group">
+<summary>Payments this month</summary>
+<div class="payment-content">
 <p class="muted">Past automatic payments are ticked here. Upcoming payments below show the next scheduled date.</p>
 <div id="monthItems">
 </div>
-<h2>Upcoming payments</h2>
+</div>
+</details>
+<details id="upcomingPayments" class="payment-group">
+<summary>Upcoming payments</summary>
+<div class="payment-content">
 <div id="items">
 </div>
+</div>
+</details>
 <h2 id="calendarTitle">Payment calendar</h2>
 <div class="toolbar">
 <button class="alt" id="prev">←</button>

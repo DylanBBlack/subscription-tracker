@@ -86,3 +86,10 @@ legend { font-size: 17px; font-weight: 700; }
 .settings-actions { display: grid; gap: 9px; }
 .settings-actions button { width: 100%; text-align: left; }
 @media (max-width: 350px) { .theme-grid { grid-template-columns: 1fr; } dialog { padding: 16px; } }
+
+.payment-group { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.payment-group > summary { padding: 16px; font-size: 17px; font-weight: 700; min-height: 52px; }
+.payment-group > summary::marker { color: var(--accent); }
+.payment-content { padding: 0 12px 12px; }
+.payment-content > .muted { font-size: 13px; line-height: 1.5; }
+.payment-group > summary:focus-visible { outline-offset: -4px; }

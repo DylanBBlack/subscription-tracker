@@ -6,7 +6,7 @@ Amounts are stored in integer pence. Monthly and annual totals come from saved r
 
 Data uses the existing `bills-encrypted-v2` localStorage key and v2 AES-GCM/PBKDF2 format. Legacy `private-subscriptions-v1` records migrate on PIN setup. Export backup produces encrypted JSON; restore requires the same PIN and confirmation before replacing this phone's records. Keep backups and your PIN safe. Clearing website data loses the local vault; updating the PWA does not require clearing data or resetting the PIN.
 
-Payments this month shows each scheduled occurrence, including automatically ticked past payments. Upcoming payments shows the next scheduled occurrence, which stays unticked until paid. Automatic completion happens after the scheduled date; today and future dates remain due. Manual mode and explicit paid/unpaid overrides take priority. The calendar and history reflect these schedules, not verified bank transactions.
+Payments this month and Upcoming payments are collapsible bars, closed by default; tap a bar to show its bills. Needs payment date appears only when at least one bill is missing its date. Payments this month shows each scheduled occurrence, including automatically ticked past payments. Upcoming payments shows the next scheduled occurrence, which stays unticked until paid. Automatic completion happens after the scheduled date; today and future dates remain due. Manual mode and explicit paid/unpaid overrides take priority. The calendar and history reflect these schedules, not verified bank transactions.
 
 ## Development and validation
 

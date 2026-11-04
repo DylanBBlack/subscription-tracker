@@ -36,7 +36,7 @@ function render(){
   $('needCount').textContent='('+needs.length+')';
   $('needs').replaceChildren();
   for(const r of needs)$('needs').append(row(r,null));
-  if(!needs.length)$('needs').textContent='All bills have payment dates.';
+  if($('needsSection'))$('needsSection').hidden=needs.length===0;
   // An older HTML shell may briefly be served during the first PWA upgrade.
   const monthItems=$('monthItems');
   if(monthItems){
