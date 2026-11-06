@@ -110,3 +110,57 @@ test('invalid and blocked theme preferences fall back without preventing PIN set
     assert.deepEqual(blocked.errors,[]);
   }finally{await blocked.close()}
 });
+
+test('font and calendar controls apply globally, persist offline, and leave the encrypted vault unchanged',async()=>{
+  const page=await browser();
+  try{
+    await page.wait('!!navigator.serviceWorker.controller');
+    await page.send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+    await unlock(page);
+    const vault=await page.evaluate("localStorage.getItem('bills-encrypted-v2')");
+    await tap(page,'#openSettings');
+    assert.equal(await page.evaluate("document.getElementById('showCalendar').checked"),true);
+    for(const font of ['manrope','lora']){
+      await page.evaluate(`(()=>{const control=document.getElementById('fontChoice');control.value='${font}';control.dispatchEvent(new Event('change',{bubbles:true}))})()`);
+      const family=font==='manrope'?'Manrope':'Lora';
+      assert.equal(await page.evaluate(`document.fonts.load('400 16px ${family}').then(faces=>faces.length)`),1);
+      for(const selector of ['body','#add','#pin','#form input','#fontChoice','#monthPayments summary','#unpaidTitle']){
+        assert.ok((await page.evaluate(`getComputedStyle(document.querySelector('${selector}')).fontFamily`)).includes(family));
+      }
+      assert.equal(await page.evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+    }
+    await tap(page,'#showCalendar');
+    assert.equal(await page.evaluate("document.getElementById('calendarSection').hidden"),true);
+    assert.equal(await page.evaluate("document.getElementById('calendarSection').checkVisibility()"),false);
+    assert.deepEqual(await page.evaluate("JSON.parse(localStorage.getItem('subscription-tracker-display-v1'))"),{font:'lora',calendar:false});
+    assert.equal(await page.evaluate("localStorage.getItem('bills-encrypted-v2')"),vault);
+    // Font files and preferences work after a fresh offline reopening, before unlocking.
+    page.setOffline(true);
+    await page.evaluate('window.__displayReload=true');await page.send('Page.reload');
+    await page.wait("typeof window.__displayReload==='undefined' && typeof render==='function'");
+    assert.equal(await page.evaluate('document.documentElement.dataset.font'),'lora');
+    assert.ok((await page.evaluate("getComputedStyle(document.getElementById('pin')).fontFamily")).includes('Lora'));
+    assert.equal(await page.evaluate("document.fonts.load('400 16px Lora').then(faces=>faces.length)"),1);
+    await unlock(page);
+    await tap(page,'#openSettings');
+    assert.equal(await page.evaluate("document.getElementById('fontChoice').value"),'lora');
+    assert.equal(await page.evaluate("document.getElementById('showCalendar').checked"),false);
+    await tap(page,'#showCalendar');
+    await tap(page,'#closeSettings');
+    assert.equal(await page.evaluate("document.getElementById('calendarSection').hidden"),false);
+    assert.equal(await page.evaluate("document.getElementById('calendarSection').checkVisibility()"),true);
+    assert.equal(await page.evaluate("localStorage.getItem('bills-encrypted-v2')"),vault);
+    assert.deepEqual(page.errors,[]);
+  }finally{await page.close()}
+});
+
+test('invalid display preferences fall back to the system font and visible calendar',async()=>{
+  const page=await browser({initScript:"localStorage.setItem('subscription-tracker-display-v1',JSON.stringify({font:'not-a-font',calendar:'false'}))"});
+  try{
+    assert.equal(await page.evaluate('document.documentElement.dataset.font'),'system');
+    assert.equal(await page.evaluate("document.getElementById('showCalendar').checked"),true);
+    assert.equal(await page.evaluate("document.getElementById('calendarSection').hidden"),false);
+    await unlock(page);
+    assert.deepEqual(page.errors,[]);
+  }finally{await page.close()}
+});

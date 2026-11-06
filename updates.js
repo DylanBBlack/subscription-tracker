@@ -6,7 +6,7 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
   const message=notice.querySelector('span');
   const button=document.getElementById('applyUpdate');
   function busy(){
-    return document.getElementById('editor')?.open ||
+    return !!document.querySelector('dialog[open]') ||
       (typeof pendingWrites!=='undefined' && pendingWrites>0) ||
       document.getElementById('gateButton')?.disabled;
   }

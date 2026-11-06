@@ -46,10 +46,11 @@
 <small id="annual">
 </small>
 </div>
-<div class="panel">
+<button class="panel stat-button" id="openUnpaid" type="button" aria-haspopup="dialog" aria-controls="unpaidDialog">
 <small>Unpaid this month</small>
-<div class="big" id="unpaid">£0.00</div>
-</div>
+<span class="big" id="unpaid">£0.00</span>
+<small class="stat-hint">View payments →</small>
+</button>
 </div>
 <div class="toolbar">
 <button class="alt" id="lock">Lock</button>
@@ -66,18 +67,12 @@
 <details id="monthPayments" class="payment-group">
 <summary>Payments this month</summary>
 <div class="payment-content">
-<p class="muted">Past automatic payments are ticked here. Upcoming payments below show the next scheduled date.</p>
+<p class="muted">Past automatic payments are ticked here. Tap Unpaid this month above to view the remaining payments.</p>
 <div id="monthItems">
 </div>
 </div>
 </details>
-<details id="upcomingPayments" class="payment-group">
-<summary>Upcoming payments</summary>
-<div class="payment-content">
-<div id="items">
-</div>
-</div>
-</details>
+<section id="calendarSection" aria-labelledby="calendarTitle">
 <h2 id="calendarTitle">Payment calendar</h2>
 <div class="toolbar">
 <button class="alt" id="prev">←</button>
@@ -85,6 +80,7 @@
 </div>
 <div id="calendar">
 </div>
+</section>
 <details>
 <summary>Payment history</summary>
 <div id="history">
@@ -92,6 +88,13 @@
 </details>
 <p class="foot">Your bills are encrypted locally with your PIN. Automatic check-offs are schedule-based, not verified bank transactions. Backups are encrypted; save your PIN safely. If website data is cleared, restore from backup.</p>
 </main>
+<dialog id="unpaidDialog" aria-labelledby="unpaidTitle">
+<div class="dialog-heading"><h2 id="unpaidTitle">Unpaid this month</h2><button class="alt" id="closeUnpaid" type="button">Done</button></div>
+<p class="muted" id="unpaidMonth"></p>
+<p class="muted">This month’s unpaid payments, including overdue ones.</p>
+<p class="dialog-total">Remaining: <strong id="unpaidDialogTotal">£0.00</strong></p>
+<div id="items"></div>
+</dialog>
 <dialog id="settings" aria-labelledby="settingsTitle">
   <div class="dialog-heading">
 <h2 id="settingsTitle">Settings</h2>
@@ -152,6 +155,11 @@
 </div>
 <p id="themeStatus" class="muted" role="status">
 </p>
+</fieldset>
+  <fieldset><legend>Display</legend>
+<label for="fontChoice">Font<select id="fontChoice"><option value="system">System</option><option value="manrope">Manrope — clean</option><option value="lora">Lora — serif</option></select></label>
+<label class="switch-label"><span>Show payment calendar</span><input id="showCalendar" type="checkbox" checked></label>
+<p class="muted preference-status" id="displayStatus" role="status"></p>
 </fieldset>
   <h2>Bills & backups</h2>
 <div class="settings-actions">
