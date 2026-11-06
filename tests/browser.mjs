@@ -16,7 +16,7 @@ export async function browser({url:initialUrl,legacyApp=false,initScript}={}){
       let body=await readFile(new URL(path||'index.html',root));
       if(path==='app.js'&&legacyApp)body=body.toString().replace('let pendingWrites=0;\n','').replace('pendingWrites++;try{','').replace('}finally{pendingWrites--}}','}');
       if(path==='sw.js'&&release)body=body.toString().replace(/subscription-tracker-[a-f0-9]+/,`subscription-tracker-${release}`);
-      const type=path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':path.endsWith('.svg')?'image/svg+xml':path.endsWith('.webmanifest')?'application/manifest+json':'text/html';
+      const type=path.endsWith('.js')?'text/javascript':path.endsWith('.ttf')?'font/ttf':path.endsWith('.css')?'text/css':path.endsWith('.svg')?'image/svg+xml':path.endsWith('.webmanifest')?'application/manifest+json':'text/html';
       res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-cache'}).end(body);
     }catch{res.writeHead(404).end()}
   });

@@ -30,7 +30,8 @@ test('past automatic payments visibly tick, while manual, today and future payme
     });
     assert.match(await page.evaluate("document.querySelector('#monthItems .item small').textContent"),/Paid automatically/);
     assert.equal(await page.evaluate("document.getElementById('unpaid').textContent"),'£4.00');
-    assert.equal(await page.evaluate("[...document.querySelectorAll('#items .item')].find(el=>el.querySelector('strong').textContent==='Past automatic').querySelector('input').checked"),false);
+    assert.equal(await page.evaluate("[...document.querySelectorAll('#items strong')].some(el=>el.textContent==='Past automatic')"),false);
+    assert.equal(await page.evaluate("document.querySelectorAll('#items .item').length"),4);
     assert.equal(await page.evaluate("document.querySelector('#needs strong').textContent"),'Unknown date');
     // Rendering and automatic completion do not rewrite the encrypted records.
     assert.equal(await page.evaluate("localStorage.getItem('bills-encrypted-v2')"),vault);
@@ -45,7 +46,8 @@ test('past automatic payments visibly tick, while manual, today and future payme
     assert.equal(await page.evaluate("records[0].overrides['2026-11-02']"),false);
     // Native disclosure bars start closed and retain their state during payment edits.
     assert.equal(await page.evaluate("document.getElementById('monthPayments').open"),false);
-    assert.equal(await page.evaluate("document.getElementById('upcomingPayments').open"),false);
+    assert.equal(await page.evaluate("document.getElementById('upcomingPayments')"),null);
+    assert.equal(await page.evaluate("document.getElementById('unpaidDialog').open"),false);
     assert.equal(await page.evaluate("document.querySelector('#monthItems input').checkVisibility()"),false);
     await page.evaluate("document.querySelector('#monthPayments summary').focus()");
     assert.equal(await page.evaluate('document.activeElement.tagName'),'SUMMARY');
@@ -53,8 +55,9 @@ test('past automatic payments visibly tick, while manual, today and future payme
     await page.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
     assert.equal(await page.evaluate("document.getElementById('monthPayments').open"),true);
     assert.ok(await page.evaluate("document.querySelector('#monthItems input').checkVisibility()"));
-    await page.evaluate("document.querySelector('#upcomingPayments summary').click();render()");
-    assert.equal(await page.evaluate("document.getElementById('upcomingPayments').open"),true);
+    await page.evaluate("document.getElementById('openUnpaid').click();render()");
+    assert.equal(await page.evaluate("document.getElementById('unpaidDialog').open"),true);
+    await page.evaluate("document.getElementById('closeUnpaid').click()");
     assert.equal(await page.evaluate("document.getElementById('monthPayments').open"),true);
     assert.equal(await page.evaluate("document.getElementById('needsSection').hidden"),false);
     // Setting the final missing date hides the whole section, clearing it brings it back.
@@ -69,7 +72,7 @@ test('past automatic payments visibly tick, while manual, today and future payme
     assert.equal(await page.evaluate("document.querySelectorAll('#needs .item').length"),1);
     // A cached HTML shell without the new section still renders its existing lists.
     await page.evaluate("document.getElementById('monthItems').remove();render()");
-    assert.equal(await page.evaluate("document.querySelectorAll('#items .item').length"),6);
+    assert.equal(await page.evaluate("document.querySelectorAll('#items .item').length"),5);
     assert.deepEqual(page.errors,[]);
   }finally{await page.close()}
 });

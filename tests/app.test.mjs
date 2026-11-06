@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {webcrypto} from 'node:crypto';
 import {browser} from './browser.mjs';
 let page;
-before(async()=>{page=await browser()});
+before(async()=>{page=await browser({initScript:`const OriginalDate=Date;window.Date=class extends OriginalDate{constructor(...args){super(...(args.length?args:[2026,10,3,12]))}static now(){return new OriginalDate(2026,10,3,12).getTime()}};`})});
 after(async()=>{await page?.close()});
 const bill=(i,start='')=>({id:`bill-${i}`,name:`Example bill ${i}`,amountPence:i*100,frequency:'monthly',start,mode:'auto',overrides:{}});
 // Independent v2 writer verifies compatibility with existing vaults, not just a round trip.
@@ -54,7 +54,7 @@ test('edit, completion, history, calendar and explicitly confirmed deletion pres
   await page.evaluate("window.confirm=()=>true;document.querySelector('#needs .item:last-child .danger').click()");await page.wait('pendingWrites===0');
   assert.equal(await page.evaluate('records.length'),10);
   assert.equal(await page.evaluate("records.some(r=>r.id==='bill-11')"),false);
-  assert.equal(await page.evaluate("document.querySelectorAll('#needs .item').length+document.querySelectorAll('#items .item').length"),10);
+  assert.equal(await page.evaluate("document.querySelectorAll('#needs .item').length+document.querySelectorAll('#monthItems .item').length"),10);
   await page.evaluate("records[0].start='2026-01-15';render()");
   assert.ok(await page.evaluate("document.getElementById('history').children.length>0"));
 });

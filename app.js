@@ -1,13 +1,13 @@
 'use strict';
 const $=id=>document.getElementById(id), VAULT='bills-encrypted-v2', LEGACY='private-subscriptions-v1',fmt=p=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(p/100),iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,today=()=>iso(new Date()),parse=s=>{let [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12)},moneyToPence=s=>{let m=String(s).trim().replace(/[£,\s]/g,'').match(/^(\d+)(?:\.(\d{1,2}))?$/);if(!m)return null;let p=Number(m[1])*100+Number((m[2]||'').padEnd(2,'0'));return Number.isSafeInteger(p)&&p<=10000000?p:null};
-let records=[],secret=null,editing=null,cal=new Date(),failed=0,blockedUntil=0,locked=true;cal.setDate(1);
+let records=[],secret=null,editing=null,cal=new Date(),failed=0,blockedUntil=0,locked=true,returnToUnpaid=false;cal.setDate(1);
 const enc=new TextEncoder(),dec=new TextDecoder(),b64=b=>btoa(String.fromCharCode(...new Uint8Array(b))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function derive(pin,salt){let material=await crypto.subtle.importKey('raw',enc.encode(pin),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
 async function encrypt(data,pin,salt){let iv=crypto.getRandomValues(new Uint8Array(12)),key=await derive(pin,salt),cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(JSON.stringify(data)));return {version:2,salt:b64(salt),iv:b64(iv),cipher:b64(cipher)}}
 async function decrypt(v,pin){let key=await derive(pin,unb64(v.salt));let raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(v.iv)},key,unb64(v.cipher));let x=JSON.parse(dec.decode(raw));if(!Array.isArray(x))throw Error('Invalid vault');return x}
 let pendingWrites=0;
 async function save(){if(!secret)return;pendingWrites++;try{let salt=crypto.getRandomValues(new Uint8Array(16));localStorage.setItem(VAULT,JSON.stringify(await encrypt(records,secret,salt)))}finally{pendingWrites--}}
-function gate(){for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();locked=true;secret=null;$('app').hidden=true;$('gate').hidden=false;$('pin').value='';$('gateError').textContent='';let exists=!!localStorage.getItem(VAULT);$('gateTitle').textContent=exists?'Unlock your bills':'Set your 6-digit PIN';$('gateButton').textContent=exists?'Unlock':'Set PIN';$('gateInfo').textContent=exists?'Enter your PIN to decrypt your bills.':'Choose a 6-digit PIN. Your bills will be encrypted locally. If you forget it, you will need a backup to restore your data.';$('reset').hidden=!exists}
+function gate(){returnToUnpaid=false;for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();locked=true;secret=null;$('app').hidden=true;$('gate').hidden=false;$('pin').value='';$('gateError').textContent='';let exists=!!localStorage.getItem(VAULT);$('gateTitle').textContent=exists?'Unlock your bills':'Set your 6-digit PIN';$('gateButton').textContent=exists?'Unlock':'Set PIN';$('gateInfo').textContent=exists?'Enter your PIN to decrypt your bills.':'Choose a 6-digit PIN. Your bills will be encrypted locally. If you forget it, you will need a backup to restore your data.';$('reset').hidden=!exists}
 async function unlock(){
   locked=false;
   $('gate').hidden=true;$('app').hidden=false;render();
@@ -31,7 +31,11 @@ function render(){
   $('total').textContent=fmt(sum.monthly);
   $('annual').textContent=fmt(sum.annual)+' annually';
   const payments=records.flatMap(r=>occurrences(r,first,last).map(d=>({r,d}))).sort((a,b)=>a.d.localeCompare(b.d));
-  $('unpaid').textContent=fmt(payments.reduce((sum,{r,d})=>sum+(paid(r,d)?0:r.amountPence),0));
+  const unpaidPayments=payments.filter(({r,d})=>!paid(r,d));
+  const unpaidTotal=fmt(unpaidPayments.reduce((sum,{r})=>sum+r.amountPence,0));
+  $('unpaid').textContent=unpaidTotal;
+  if($('unpaidDialogTotal'))$('unpaidDialogTotal').textContent=unpaidTotal;
+  if($('unpaidMonth'))$('unpaidMonth').textContent=$('month').textContent;
   const needs=records.filter(r=>!r.start);
   $('needCount').textContent='('+needs.length+')';
   $('needs').replaceChildren();
@@ -45,14 +49,13 @@ function render(){
     if(!payments.length)monthItems.textContent='No payment dates scheduled this month.';
   }
   $('items').replaceChildren();
-  const scheduled=records.filter(r=>r.start).map(r=>({r,d:next(r)})).sort((a,b)=>a.d.localeCompare(b.d));
-  for(const {r,d} of scheduled)$('items').append(row(r,d));
-  if(!scheduled.length)$('items').textContent='No scheduled bills yet.';
+  for(const {r,d} of unpaidPayments)$('items').append(row(r,d));
+  if(!unpaidPayments.length)$('items').textContent='No unpaid payments scheduled this month.';
   calendarRender();historyRender();
 }
 function calendarRender(){let y=cal.getFullYear(),m=cal.getMonth(),first=new Date(y,m,1,12),last=new Date(y,m+1,0,12),counts={};$('calendarTitle').textContent='Payment calendar · '+first.toLocaleDateString('en-GB',{month:'long',year:'numeric'});for(let r of records)for(let d of occurrences(r,first,last))counts[d]=(counts[d]||0)+1;let root=$('calendar');root.replaceChildren();for(let s of ['M','T','W','T','F','S','S']){let e=document.createElement('div');e.textContent=s;root.append(e)}for(let i=0;i<(first.getDay()+6)%7;i++)root.append(document.createElement('div'));for(let i=1;i<=last.getDate();i++){let e=document.createElement('div'),d=iso(new Date(y,m,i,12));e.textContent=i+(counts[d]?' •':'');if(counts[d])e.className='hit';root.append(e)}}
 function historyRender(){let end=new Date(),start=new Date(end.getFullYear()-1,end.getMonth(),end.getDate(),12),arr=[];for(let r of records)for(let d of occurrences(r,start,end))arr.push({r,d});arr.sort((a,b)=>b.d.localeCompare(a.d));$('history').replaceChildren();for(let {r,d} of arr.slice(0,150)){let p=document.createElement('p');p.className='muted';p.textContent=`${d} · ${r.name} · ${fmt(r.amountPence)} · ${paid(r,d)?'Paid':'Unpaid'}`;$('history').append(p)}}
-function openEditor(id=null){$('settings')?.close();editing=id;let r=records.find(x=>x.id===id),f=$('form').elements;$('form').reset();$('formTitle').textContent=r?'Edit bill':'Add bill';f.name.value=r?.name||'';f.amount.value=r?(r.amountPence/100).toFixed(2):'';f.frequency.value=r?.frequency||'monthly';f.start.value=r?.start||'';f.mode.value=r?.mode||'auto';$('editor').showModal()}
+function openEditor(id=null){$('settings')?.close();returnToUnpaid=!!$('unpaidDialog')?.open;if(returnToUnpaid)$('unpaidDialog').close();editing=id;let r=records.find(x=>x.id===id),f=$('form').elements;$('form').reset();$('formTitle').textContent=r?'Edit bill':'Add bill';f.name.value=r?.name||'';f.amount.value=r?(r.amountPence/100).toFixed(2):'';f.frequency.value=r?.frequency||'monthly';f.start.value=r?.start||'';f.mode.value=r?.mode||'auto';$('editor').showModal()}
 $('add').onclick=()=>openEditor();$('cancel').onclick=()=>$('editor').close();$('form').onsubmit=async e=>{e.preventDefault();let f=e.currentTarget.elements,p=moneyToPence(f.amount.value);if(p===null||!f.name.value.trim()){alert('Invalid name or amount');return}let old=records.find(x=>x.id===editing),r={id:old?.id||crypto.randomUUID(),name:f.name.value.trim(),amountPence:p,frequency:f.frequency.value,start:f.start.value,mode:f.mode.value,overrides:old?.overrides||{}};if(old)records=records.map(x=>x.id===old.id?r:x);else records.push(r);await save();$('editor').close();render()};
 function csvRows(s){let rows=[],row=[],cell='',quote=false;for(let i=0;i<s.length;i++){let c=s[i];if(quote){if(c==='"'&&s[i+1]==='"'){cell+='"';i++}else if(c==='"')quote=false;else cell+=c}else if(c==='"')quote=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&s[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell=''}else cell+=c}row.push(cell);if(row.some(x=>x.trim()))rows.push(row);return rows}
 $('import').onclick=()=>{$('settings')?.close();$('importFile').click()};$('importFile').onchange=async e=>{let file=e.target.files[0];if(!file)return;try{if(file.size>1024*1024)throw Error('CSV too large');let rows=csvRows(await file.text());if(rows.length<2)throw Error('No data');let header=rows.shift().map(s=>s.toLowerCase().trim());let n=header.findIndex(s=>['name','bill','subscription'].includes(s)),a=header.findIndex(s=>['amount','amount gbp','cost','price'].includes(s)),f=header.findIndex(s=>['frequency','interval'].includes(s)),d=header.findIndex(s=>['date','start','payment date','due date'].includes(s));if(n<0||a<0)throw Error('CSV needs Name and Amount columns');let seen=new Set(records.map(r=>r.name.toLowerCase().trim())),newOnes=[],skipped=0;for(let row of rows){let name=(row[n]||'').trim(),amountPence=moneyToPence(row[a]||''),freq=(row[f]||'monthly').toLowerCase().trim(),start=(row[d]||'').trim();if(!name||name.length>80||amountPence===null||!['monthly','weekly','quarterly','yearly'].includes(freq)||start&&!/^\d{4}-\d{2}-\d{2}$/.test(start))throw Error('Invalid row for '+(name||'unnamed bill'));if(seen.has(name.toLowerCase())){skipped++;continue}seen.add(name.toLowerCase());newOnes.push({id:crypto.randomUUID(),name,amountPence,frequency:freq,start,mode:'auto',overrides:{}})}let sum=newOnes.reduce((s,r)=>s+r.amountPence,0);if(!confirm(`Import ${newOnes.length} new bills (${fmt(sum)} combined amounts)? ${skipped} duplicates skipped. Review dates after import.`))return;records.push(...newOnes);await save();render();show(`Imported ${newOnes.length} bills; skipped ${skipped} duplicates.`)}catch(err){alert('Import failed: '+err.message)}finally{e.target.value=''}};
@@ -63,3 +66,9 @@ gate();
 
 if($('openSettings'))$('openSettings').onclick=()=>{if(!locked)$('settings').showModal()};
 if($('closeSettings'))$('closeSettings').onclick=()=>$('settings').close();
+
+if($('openUnpaid'))$('openUnpaid').onclick=()=>{if(!locked){render();$('unpaidDialog').showModal()}};
+if($('closeUnpaid'))$('closeUnpaid').onclick=()=>$('unpaidDialog').close();
+$('editor').addEventListener('close',()=>{
+  if(returnToUnpaid){returnToUnpaid=false;if(!locked)$('unpaidDialog')?.showModal()}
+});
