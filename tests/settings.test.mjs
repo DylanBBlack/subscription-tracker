@@ -46,7 +46,11 @@ test('settings exposes bill tools and four persistent accessible themes without 
       try{document.getElementById('export').click();return await savedBlob.text()}
       finally{URL.createObjectURL=originalURL;HTMLAnchorElement.prototype.click=originalClick}
     })()`);
-    assert.equal(backup,vault);
+    const exported=JSON.parse(backup);
+    const {paymentHistory,...billEnvelope}=exported;
+    assert.deepEqual(billEnvelope,JSON.parse(vault));
+    assert.equal(paymentHistory.version,2);
+    assert.equal(await page.evaluate(`decrypt(${JSON.stringify(paymentHistory)},'123456').then(validHistory)`),true);
     for(const [action,input] of [['import','importFile'],['restore','restoreFile']]){
       await page.evaluate(`document.getElementById('${input}').click=()=>window.__picked='${input}'`);
       await tap(page,'#'+action);

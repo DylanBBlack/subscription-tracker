@@ -1,7 +1,7 @@
 // Static hosting needs no build server. Regenerate after changing a shell asset.
 import {createHash} from 'node:crypto';
 import {readFileSync,writeFileSync} from 'node:fs';
-const files=['index.html','app.js','updates.js','styles.css','themes.js','manifest.webmanifest','icon.svg','fonts/manrope-variable.ttf','fonts/lora-variable.ttf'];
+const files=['index.html','app.js','history.js','updates.js','styles.css','themes.js','manifest.webmanifest','icon.svg','fonts/manrope-variable.ttf','fonts/lora-variable.ttf'];
 const revision=createHash('sha256');
 for(const file of files)revision.update(file).update(readFileSync(new URL('../'+file,import.meta.url)));
 const path=new URL('../sw.js',import.meta.url);
