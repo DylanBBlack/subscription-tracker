@@ -33,3 +33,13 @@ Merge and deployment are separate from validation. Review the pull request befor
 ## Bundled fonts
 
 Manrope and Lora are variable fonts bundled locally for offline use; the running app does not fetch fonts from third-party services. Sources: [Manrope](https://github.com/google/fonts/tree/main/ofl/manrope) and [Lora](https://github.com/google/fonts/tree/main/ofl/lora). Their SIL Open Font License files are in `fonts/`. Include the `fonts/` directory when hosting the app.
+
+## Three-month payment history
+
+The existing Payment history disclosure contains a month selector for the current local calendar month and previous two months. Earlier snapshots remain encrypted in localStorage but are not offered in the selector. New months create scheduled occurrences from the same recurring bill records; no duplicate bill records are added. Previous months' ticks do not carry over. The existing automatic/manual completion rules and explicit date-specific overrides remain in force.
+
+History snapshots preserve each occurrence's name, amount, date and status after its month closes, independently of later bill edits or deletions. Automatic occurrences finish according to the completion mode captured for that month. A visible app checks for month rollover once a minute; reopening/unlocking also catches rollover and skipped months.
+
+The original `bills-encrypted-v2` bill vault remains a v2 array. A separate `bills-history-encrypted-v1` key contains encrypted monthly snapshots under the same PIN and encryption parameters. Unlocking existing data adds the history archive without rewriting the original bill vault. Exported v2 backups include an optional encrypted `paymentHistory` envelope; older v2 backups without that field still restore, retaining existing past history on the phone. A confirmed vault reset also erases its associated history.
+
+On first enabling history, earlier months are reconstructed from currently saved bills and date-specific overrides and labelled accordingly. Previously edited amounts/dates and deleted bills cannot be recovered from data the older app never stored. From then on, captured monthly snapshots are retained. No dashboard styling, calculations, calendar, settings or payment controls change.
