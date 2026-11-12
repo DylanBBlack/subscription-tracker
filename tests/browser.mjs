@@ -45,5 +45,5 @@ export async function browser({url:initialUrl,legacyApp=false,initScript}={}){
   async function evaluate(expression){const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value}
   async function wait(expression){const end=Date.now()+15000;while(Date.now()<end){try{if(await evaluate(expression))return}catch{}await new Promise(resolve=>setTimeout(resolve,50))}throw Error('Timed out: '+expression)}
   await send('Page.navigate',{url:initialUrl||origin+'/tracker/'});await wait("typeof render==='function' && typeof historyRender==='function'");
-  return {evaluate,wait,send,errors,origin,setOffline:value=>{offline=value},setRelease:value=>{release=value},close:async()=>{ws.close();child.kill();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100})}};
+  return {evaluate,wait,send,errors,origin,debugPort:Number(new URL(endpoint).port),setOffline:value=>{offline=value},setRelease:value=>{release=value},close:async()=>{ws.close();child.kill();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100})}};
 }

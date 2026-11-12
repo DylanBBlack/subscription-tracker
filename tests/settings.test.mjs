@@ -64,7 +64,7 @@ test('settings exposes bill tools and four persistent accessible themes without 
       assert.equal(await page.evaluate("localStorage.getItem('subscription-tracker-theme-v1')"),theme);
       assert.equal(await page.evaluate("document.querySelector('meta[name=theme-color]').content"),background);
       assert.equal(await page.evaluate("document.querySelectorAll('input[name=theme]:checked').length"),1);
-      const colours=await page.evaluate(`(()=>{const root=getComputedStyle(document.documentElement),panel=getComputedStyle(document.querySelector('.panel')),button=getComputedStyle(document.getElementById('add')),muted=getComputedStyle(document.querySelector('.panel small'));return {text:root.color,bg:root.backgroundColor,panel:panel.backgroundColor,muted:muted.color,buttonText:button.color,button:button.backgroundColor}})()`);
+      const colours=await page.evaluate(`(()=>{const root=getComputedStyle(document.documentElement),panel=getComputedStyle(document.getElementById('openUnpaid')),button=getComputedStyle(document.getElementById('add')),muted=getComputedStyle(document.querySelector('.panel small'));return {text:root.color,bg:root.backgroundColor,panel:panel.backgroundColor,muted:muted.color,buttonText:button.color,button:button.backgroundColor}})()`);
       for(const [fg,bg] of [[colours.text,colours.bg],[colours.text,colours.panel],[colours.muted,colours.panel],[colours.buttonText,colours.button]]){
         assert.ok(contrast(fg,bg)>=4.5,`${theme} text contrast ${contrast(fg,bg)}`);
       }
