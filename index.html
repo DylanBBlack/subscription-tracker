@@ -37,7 +37,7 @@
 <div class="muted" id="month">
 </div>
 </div>
-<button id="openSettings" class="alt" type="button" aria-haspopup="dialog">Settings</button>
+<div class="header-actions"><button id="openSettings" class="alt" type="button" aria-haspopup="dialog">Settings</button><button class="alt" id="lock" type="button">Lock</button></div>
 </header>
 <div class="stats">
 <div class="panel">
@@ -52,9 +52,6 @@
 <small class="stat-hint">View payments →</small>
 </button>
 </div>
-<div class="toolbar">
-<button class="alt" id="lock">Lock</button>
-</div>
 <div id="message" class="notice" hidden>
 </div>
 <section id="needsSection" aria-labelledby="needsTitle" hidden>
@@ -64,6 +61,7 @@
 <div id="needs">
 </div>
 </section>
+<div class="dashboard-grid">
 <details id="monthPayments" class="payment-group">
 <summary>Payments this month</summary>
 <div class="payment-content">
@@ -75,19 +73,20 @@
 <section id="calendarSection" aria-labelledby="calendarTitle">
 <h2 id="calendarTitle">Payment calendar</h2>
 <div class="toolbar">
-<button class="alt" id="prev">←</button>
-<button class="alt" id="next">→</button>
+<button class="alt" id="prev" aria-label="Previous month" aria-controls="calendar">←</button>
+<button class="alt" id="next" aria-label="Next month" aria-controls="calendar">→</button>
 </div>
 <div id="calendar">
 </div>
 </section>
-<details>
+<details class="history-panel">
 <summary>Payment history</summary>
 <label for="historyMonth">Month<select id="historyMonth"></select></label>
 <p id="historyInfo" class="muted" hidden></p>
 <div id="history">
 </div>
 </details>
+</div>
 <p class="foot">Your bills are encrypted locally with your PIN. Automatic check-offs are schedule-based, not verified bank transactions. Backups are encrypted; save your PIN safely. If website data is cleared, restore from backup.</p>
 </main>
 <dialog id="unpaidDialog" aria-labelledby="unpaidTitle">
@@ -159,7 +158,7 @@
 </p>
 </fieldset>
   <fieldset><legend>Display</legend>
-<label for="fontChoice">Font<select id="fontChoice"><option value="system">System</option><option value="manrope">Manrope — clean</option><option value="lora">Lora — serif</option></select></label>
+<label for="fontChoice">Font<select id="fontChoice"><option value="system">System</option><option value="manrope">Manrope (clean)</option><option value="lora">Lora (serif)</option></select></label>
 <label class="switch-label"><span>Show payment calendar</span><input id="showCalendar" type="checkbox" checked></label>
 <p class="muted preference-status" id="displayStatus" role="status"></p>
 </fieldset>
