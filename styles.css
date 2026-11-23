@@ -209,3 +209,23 @@ legend { font-size: 16px; font-weight: 600; }
   .item .detail > small { grid-column: 1; grid-row: 2; display: flex; flex-wrap: wrap; column-gap: 12px; }
   .item .actions { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; flex-wrap: nowrap; }
 }
+
+/* Instalment-specific additions; ordinary recurring-bill rows keep their layout. */
+#form [hidden], #plansSection[hidden], #planFinalNotice[hidden], #planBalances[hidden] { display: none; }
+#plansSection { grid-column: 1; grid-row: 2; margin-top: 24px; }
+.dashboard-grid:has(#plansSection:not([hidden])) > .history-panel { grid-row: 3; }
+.dashboard-grid:has(#plansSection:not([hidden])) > #calendarSection { grid-row: 1 / span 3; }
+.plan-extra { display: flex; align-items: center; gap: 12px; margin-top: 12px; grid-column: 1 / -1; }
+.plan-progress { --plan-progress: 0deg; width: 72px; height: 72px; min-width: 72px; border: 0; border-radius: 50%; padding: 4px; color: var(--text); background: conic-gradient(var(--accent) var(--plan-progress), var(--border) 0); }
+.plan-progress-face { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; border-radius: 50%; background: var(--panel); }
+.plan-progress-face > span { font-size: 10px; font-weight: 400; }
+.plan-progress .plan-progress-face > strong { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.plan-copy { min-width: 0; font-size: 13px; }
+.plan-copy > span, .plan-copy > small { display: block; }
+.plan-final { margin-top: 8px; font-size: 11px; padding: 8px; text-align: left; }
+#planPayments .detail { display: block; }
+#planSummary, #planDates { font-size: 13px; }
+#planFields { margin-bottom: 16px; }
+@media (max-width: 767px) { #plansSection { margin-top: 0; } .plan-extra { gap: 8px; flex-wrap: wrap; } }
+
+#planBalanceItems .detail { display: block; }
