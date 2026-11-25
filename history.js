@@ -27,7 +27,7 @@ async function loadHistory(pin){
 function snapshotMonth(key,reconstructed=false){
   const [first,last]=monthBounds(key);
   return {month:key,reconstructed,finalized:key<monthKey(new Date()),payments:records.flatMap(r=>
-    occurrences(r,first,last).map(date=>({id:String(r.id),name:r.name,amountPence:r.amountPence,date,
+    occurrences(r,first,last).map(date=>({id:String(r.id),name:r.name,amountPence:paymentPence(r,date),date,
       paid:paid(r,date),automatic:r.mode==='auto'&&r.overrides?.[date]==null})))};
 }
 function recordHistoryOverride(id,date,value){

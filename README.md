@@ -22,7 +22,7 @@ The tests launch a real headless browser against a temporary local HTTP server w
 
 ## Static hosting and updates
 
-Host `index.html`, `styles.css`, `themes.js`, `app.js`, `updates.js`, `sw.js`, `manifest.webmanifest` and `icon.svg` together over HTTPS. Open in iPhone Safari, then Share → Add to Home Screen. The older ZIP in repository history is not the maintained source; use the current files.
+Host `index.html`, `styles.css`, `themes.js`, `app.js`, `history.js`, `instalments.js`, `updates.js`, `sw.js`, `manifest.webmanifest` and `icon.svg` together over HTTPS. Open in iPhone Safari, then Share → Add to Home Screen. The older ZIP in repository history is not the maintained source; use the current files.
 
 After changing any shell asset or worker logic, run `npm run prepare:update` and commit the generated `sw.js` revision. `npm run check` fails if the revision is stale. The worker precaches a complete release and keeps it available offline, bypassing HTTP caches during installation. Registration uses `updateViaCache: 'none'` and checks on launch, focus, returning to the foreground, and hourly while visible.
 
@@ -43,3 +43,15 @@ History snapshots preserve each occurrence's name, amount, date and status after
 The original `bills-encrypted-v2` bill vault remains a v2 array. A separate `bills-history-encrypted-v1` key contains encrypted monthly snapshots under the same PIN and encryption parameters. Unlocking existing data adds the history archive without rewriting the original bill vault. Exported v2 backups include an optional encrypted `paymentHistory` envelope; older v2 backups without that field still restore, retaining existing past history on the phone. A confirmed vault reset also erases its associated history.
 
 On first enabling history, earlier months are reconstructed from currently saved bills and date-specific overrides and labelled accordingly. Previously edited amounts/dates and deleted bills cannot be recovered from data the older app never stored. From then on, captured monthly snapshots are retained. No dashboard styling, calculations, calendar, settings or payment controls change.
+
+## Spread-cost payment plans
+
+In Settings → Add bill, choose **Spread-cost plan**. Enter the total to repay (including any fees), number of payments, first payment date and monthly, weekly or fortnightly frequency. The preview shows the end date and first/final amounts. Each payment uses integer pence; any division remainder goes into the final payment. Monthly dates stay anchored to the original day, clamping to shorter months. New plans default to manual completion; automatic completion remains an optional date-based estimate, not confirmation from a lender.
+
+The existing monthly payment list shows a clickable **Payment 1 of 3** circle. Open it to view the full schedule, tick individual payments and see the remaining balance. **View payments** also lists ongoing whole-plan balances separately from this month's unpaid total. A conditional Spread-cost plans disclosure keeps plans accessible outside their payment months and after completion. Paid payment terms are protected from editing; unmark payments before correcting the amount or schedule. Names and completion mode remain editable.
+
+In a plan's final calendar month, an in-app reminder appears on unlock/return to the dashboard when no other dialog is open. Dismissing it records an encrypted acknowledgement for that month. A **Final payment this month** button remains on the bill until its final payment is marked paid. These reminders appear within the app, not as background push notifications.
+
+Plans stop generating payments at the end of their fixed schedule. Existing recurring-bill calculations remain unchanged: plans add only their actual scheduled payments to this calendar month's total, and their scheduled payments within the current and next eleven calendar months to the annual projection. Whole-plan remaining balances count only payments marked paid under the chosen completion mode. Existing bills are never converted, seeded or deleted automatically.
+
+Plan schedules, date-specific ticks and reminder acknowledgements are optional fields in the existing encrypted v2 bill array, protected by the same PIN. Encrypted export/restore includes them, and monthly history captures each actual instalment amount, including the final pence adjustment. Older bills and backups remain compatible. Completed plans stay saved until explicitly deleted.

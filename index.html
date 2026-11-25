@@ -70,6 +70,7 @@
 </div>
 </div>
 </details>
+<details id="plansSection" class="payment-group" hidden><summary>Spread-cost plans</summary><div id="planItems" class="payment-content"></div></details>
 <section id="calendarSection" aria-labelledby="calendarTitle">
 <h2 id="calendarTitle">Payment calendar</h2>
 <div class="toolbar">
@@ -95,6 +96,19 @@
 <p class="muted">This month’s unpaid payments, including overdue ones.</p>
 <p class="dialog-total">Remaining: <strong id="unpaidDialogTotal">£0.00</strong></p>
 <div id="items"></div>
+<section id="planBalances" hidden><h2>Spread-cost balances</h2><p class="muted">Outstanding across each whole plan, separate from this month’s remaining total above.</p><div id="planBalanceItems"></div></section>
+</dialog>
+<dialog id="planDialog" aria-labelledby="planTitle">
+<div class="dialog-heading"><h2 id="planTitle">Spread-cost plan</h2><button id="closePlan" class="alt" type="button">Done</button></div>
+<p id="planSummary" class="muted"></p><p id="planDates" class="muted"></p>
+<p class="dialog-total">Left to pay: <strong id="planRemaining">£0.00</strong></p>
+<p id="planFinalNotice" class="notice" hidden></p>
+<h2>Payment history and schedule</h2><div id="planPayments"></div>
+<div class="toolbar"><button id="editPlan" class="alt" type="button">Edit plan</button><button id="deletePlan" class="danger" type="button">Delete plan</button></div>
+</dialog>
+<dialog id="planReminder" aria-labelledby="planReminderTitle">
+<div class="dialog-heading"><h2 id="planReminderTitle">Final payments this month</h2><button id="dismissPlanReminder" class="alt" type="button">Not now</button></div>
+<p class="muted">These spread-cost plans have their final payment due this month.</p><div id="planReminderItems"></div>
 </dialog>
 <dialog id="settings" aria-labelledby="settingsTitle">
   <div class="dialog-heading">
@@ -178,16 +192,24 @@
 <h2 id="formTitle">Add bill</h2>
 <label>Name<input name="name" maxlength="80" required>
 </label>
-<label>Amount (£)<input name="amount" type="number" min="0" max="100000" step="0.01" required>
+<label>Type<select name="recordType"><option value="recurring">Recurring bill</option><option value="instalment">Spread-cost instalment plan</option></select></label>
+<label id="billAmountField">Amount (£)<input name="amount" type="number" min="0" max="100000" step="0.01" required>
 </label>
+<fieldset id="planFields" hidden><legend>Spread-cost plan</legend>
+<label>Total to repay (£)<input name="planTotal" type="number" min="0.01" max="100000" step="0.01"></label>
+<label>Number of payments<input name="planCount" type="number" min="1" max="120" step="1" value="3"></label>
+<p id="planSchedulePreview" class="muted" role="status"></p>
+<p id="planTermsInfo" class="muted" hidden>Payments are marked paid. Unmark them in the plan history before changing the total or schedule.</p>
+</fieldset>
 <label>Frequency<select name="frequency">
 <option value="monthly">Monthly</option>
 <option value="weekly">Weekly</option>
+<option value="fortnightly" hidden>Fortnightly</option>
 <option value="quarterly">Quarterly</option>
 <option value="yearly">Yearly</option>
 </select>
 </label>
-<label>Next / first due date (optional)<input name="start" type="date">
+<label><span id="paymentDateLabel">Next / first due date (optional)</span><input name="start" type="date">
 </label>
 <label>Completion<select name="mode">
 <option value="auto">Automatic after scheduled date</option>
@@ -200,6 +222,7 @@
 </div>
 </form>
 </dialog>
+<script src="instalments.js"></script>
 <script src="history.js"></script>
 <script src="app.js">
 </script>
